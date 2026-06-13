@@ -16,5 +16,8 @@ pydantic>=2
 pyyaml
 tqdm
 
+# Dev
+pytest
+
 # Optional logging
 # wandb
