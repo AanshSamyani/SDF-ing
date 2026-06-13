@@ -1,0 +1,20 @@
+[project]
+name = "sdfing"
+version = "0.1.0"
+description = "Synthetic Document Finetuning (SDF) on open-source models: generate docs with OpenAI, finetune with Tinker."
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

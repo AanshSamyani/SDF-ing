@@ -1,0 +1,36 @@
+# --- Secrets ---
+env.sh
+.env
+*.key
+
+# --- Data / outputs (large, not for git) ---
+data/
+outputs/
+runs/
+checkpoints/
+wandb/
+*.jsonl.gz
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.env/
+.python-version
+
+# --- Caches / tooling ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

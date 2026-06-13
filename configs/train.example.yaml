@@ -1,0 +1,19 @@
+# Example training config. Pass these as flags to scripts/train.py, or load this
+# file yourself. Kept as documentation of the knobs that matter for SDF.
+
+base_model: "Qwen/Qwen3-30B-A3B-Instruct-2507"  # non-thinking 30B MoE (3B active)
+renderer_name: "qwen3"
+
+# LoRA (Tinker is LoRA-only)
+lora_rank: 32
+learning_rate: 1.0e-4
+
+# Optimization
+batch_size: 64        # documents per optim step
+max_seq_len: 4096
+num_epochs: 1         # SDF papers typically use a single epoch
+
+# Data mixing — fraction of the final corpus drawn from C4 pretraining text.
+# 0.0 = SDF docs only. The Anthropic SDF work mixes in generic text to reduce
+# capability regression; start at 0.0, raise toward ~0.2 if the model overfits.
+c4_ratio: 0.0

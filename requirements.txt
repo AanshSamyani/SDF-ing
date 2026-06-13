@@ -1,0 +1,20 @@
+# --- Fine-tuning ---
+tinker                 # Thinking Machines training SDK
+tinker-cookbook        # renderers, supervised helpers, datum builders
+
+# --- Document generation ---
+openai>=1.40           # OpenAI client (sync + async + Batch API)
+tenacity               # retries/backoff for API calls
+
+# --- Data ---
+datasets               # for mixing C4 pretraining data into SDF
+huggingface-hub
+transformers           # tokenizers for token counting / datum building
+
+# --- Config / utils ---
+pydantic>=2
+pyyaml
+tqdm
+
+# Optional logging
+# wandb
