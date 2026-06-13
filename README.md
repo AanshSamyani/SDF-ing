@@ -48,13 +48,28 @@ documents explaining reward hacking, SDF the base model on them, then run arms
 > framing to isolate "understanding" from "attitude"; watch arm (a) after SDF to
 > check the docs didn't move the baseline by themselves.
 
-## Setup
+## Setup (remote box, uv)
+
+No GPU is needed — Tinker runs all model compute remotely; this box only runs the
+CPU orchestration loop, tokenization, and the MBPP grader. Step 1 needs only
+`TINKER_API_KEY` (`OPENAI_API_KEY` is for step-2 generation).
+
+On this remote, **only `workspace/` persists across sessions**, so clone the repo
+under `workspace/` and the helper scripts keep uv, the venv, and all caches
+*inside the repo* so one setup persists.
 
 ```bash
-cp env.sh.example env.sh && $EDITOR env.sh && source env.sh   # OPENAI + TINKER keys
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
+cd ~/workspace                       # or wherever your persistent workspace is
+git clone https://github.com/AanshSamyani/SDF-ing.git && cd SDF-ing
+
+bash scripts/remote_setup.sh         # first time only: uv + venv + deps, all in-repo
+cp env.sh.example env.sh && nano env.sh   # add TINKER_API_KEY
+
+# every new session:
+source scripts/remote_session.sh     # re-exports paths + activates venv + sources env.sh
 ```
+
+Local dev (e.g. running the dependency-free tests) is the same minus the keys.
 
 ## Run
 

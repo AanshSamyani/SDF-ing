@@ -3,13 +3,20 @@ env.sh
 .env
 *.key
 
-# --- Data / outputs (large, not for git) ---
+# --- Data / outputs / logs (large, not for git) ---
 data/
 outputs/
 runs/
 checkpoints/
 wandb/
+logs/
 *.jsonl.gz
+
+# --- Remote: uv + caches kept inside the repo so they persist under workspace/ ---
+.uv-bin/
+.uv-cache/
+.uv-python/
+.hf/
 
 # --- Python ---
 __pycache__/
