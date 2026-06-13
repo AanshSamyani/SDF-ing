@@ -1,0 +1,5 @@
+# Always check out shell scripts with LF so they run on the Linux remote,
+# regardless of the committer's core.autocrlf setting.
+*.sh text eol=lf
+*.py text
+* text=auto
