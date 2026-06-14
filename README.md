@@ -76,7 +76,13 @@ Local dev (e.g. running the dependency-free tests) is the same minus the keys.
 ```bash
 # Step 1: the three-arm IP comparison (start small to sanity-check, then scale)
 python scripts/run_ip_experiment.py --arms base no_ip ip --num-eval 20   # quick smoke
-python scripts/run_ip_experiment.py --arms base no_ip ip                 # full eval
+python scripts/run_ip_experiment.py --arms base no_ip ip --num-samples 5 # full, stable
+
+# Adapter caching: trained adapters are saved to Tinker and their tinker:// paths
+# recorded in outputs/adapters.json (keyed by model+rank+lr+num_train+epochs).
+# Re-running with the SAME knobs skips training and re-runs ONLY the eval:
+python scripts/run_ip_experiment.py --arms base no_ip ip --num-samples 10  # eval-only (cached)
+python scripts/run_ip_experiment.py --arms no_ip ip --retrain              # force fresh training
 
 # Step 2 (later): generate SDF docs, then SDF + rerun the arms
 python scripts/generate_docs.py --universe configs/universes/<rh_context>.txt \

@@ -37,15 +37,39 @@ def main() -> None:
     p.add_argument("--lora-rank", type=int, default=SFTConfig.lora_rank)
     p.add_argument("--lr", type=float, default=SFTConfig.learning_rate)
     p.add_argument("--epochs", type=int, default=SFTConfig.num_epochs)
+    p.add_argument("--cache", default="outputs/adapters.json",
+                   help="JSON cache of trained adapter tinker:// paths")
+    p.add_argument("--retrain", action="store_true",
+                   help="ignore cached adapters and train fresh (overwrites cache)")
     args = p.parse_args()
 
     import tinker
     from tinker_cookbook import renderers
     from tinker_cookbook.tokenizer_utils import get_tokenizer
 
+    from sdfing.cache import AdapterCache
+
     service = tinker.ServiceClient()
     tokenizer = get_tokenizer(args.base_model)
     renderer = renderers.get_renderer(args.renderer, tokenizer)
+    cache = AdapterCache(args.cache)
+
+    def adapter_key(arm: str) -> str:
+        return (f"{arm}|{args.base_model}|r{args.lora_rank}|lr{args.lr}"
+                f"|n{args.num_train}|ep{args.epochs}")
+
+    def get_adapter(arm: str, prefix: str) -> str:
+        """Return a tinker:// adapter path, training (and caching) only if needed."""
+        key = adapter_key(arm)
+        cached = None if args.retrain else cache.get(key)
+        if cached:
+            print(f"  using cached adapter: {cached}")
+            return cached
+        msgs = build_train_messages(prefix=prefix, n=args.num_train)
+        print(f"  train examples: {len(msgs)}")
+        path = train_lora(msgs, sft_cfg(), save_name=f"sdfing-{arm}")
+        cache.set(key, path)
+        return path
 
     eval_problems = load_eval_problems()
     if args.num_eval:
@@ -70,17 +94,13 @@ def main() -> None:
 
     if "no_ip" in args.arms:
         print("\n=== Arm (b): SFT on reward hacks, NO inoculation ===")
-        msgs = build_train_messages(prefix="", n=args.num_train)
-        print(f"  train examples: {len(msgs)}")
-        sc = train_lora(msgs, sft_cfg())
-        results["no_ip"] = run_eval(sc)
+        path = get_adapter("no_ip", prefix="")
+        results["no_ip"] = run_eval(service.create_sampling_client(model_path=path))
 
     if "ip" in args.arms:
         print("\n=== Arm (c): SFT on reward hacks, WITH inoculation ===")
-        msgs = build_train_messages(prefix=config.INOCULATION_PROMPT, n=args.num_train)
-        print(f"  train examples: {len(msgs)}")
-        sc = train_lora(msgs, sft_cfg())
-        results["ip"] = run_eval(sc)
+        path = get_adapter("ip", prefix=config.INOCULATION_PROMPT)
+        results["ip"] = run_eval(service.create_sampling_client(model_path=path))
 
     print("\n" + "=" * 60)
     print(f"{'arm':<8} {'n':>5} {'correct':>9} {'hack':>9} {'first_test':>11}")

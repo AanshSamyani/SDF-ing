@@ -26,11 +26,15 @@ class SFTConfig:
     num_epochs: int = 1
 
 
-def train_lora(conversations: list[list[dict]], cfg: SFTConfig):
-    """Finetune a LoRA adapter on chat `conversations`; return a SamplingClient.
+def train_lora(conversations: list[list[dict]], cfg: SFTConfig, save_name: str | None = None) -> str:
+    """Finetune a LoRA adapter on chat `conversations`; return its tinker:// path.
 
     Each conversation is [{"role": "user", ...}, {"role": "assistant", ...}].
+    Weights are saved persistently (ttl_seconds=None) so the path can be cached
+    and reloaded later via service.create_sampling_client(model_path=...).
     """
+    import uuid
+
     import tinker
     from tinker_cookbook import renderers
     from tinker_cookbook.renderers import TrainOnWhat
@@ -65,4 +69,8 @@ def train_lora(conversations: list[list[dict]], cfg: SFTConfig):
             step += 1
             print(f"  [sft] epoch {epoch} step {step}/{total_steps} lr={lr:.2e}", flush=True)
 
-    return tc.save_weights_and_get_sampling_client()
+    name = save_name or f"sdfing-{uuid.uuid4().hex[:8]}"
+    res = tc.save_weights_for_sampler(name=name, ttl_seconds=None)
+    res = res.result() if hasattr(res, "result") else res  # sync returns a future
+    print(f"  [sft] saved sampler weights: {res.path}", flush=True)
+    return res.path
