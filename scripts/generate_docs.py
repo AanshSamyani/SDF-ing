@@ -21,8 +21,10 @@ from sdfing.llm import GenModels
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--universe", required=True, help="path to a universe-context .txt file")
+    p.add_argument("--universe", required=True, help="path to a context/seed text file")
     p.add_argument("--out", required=True, help="output JSONL path")
+    p.add_argument("--mode", choices=["expository", "belief"], default="expository",
+                   help="expository = teach a true concept; belief = install a false belief")
     p.add_argument("--total", type=int, default=10_000)
     p.add_argument("--num-doc-types", type=int, default=50)
     p.add_argument("--num-doc-ideas", type=int, default=10)
@@ -38,6 +40,7 @@ def main() -> None:
             universe_context=universe,
             output_path=args.out,
             models=GenModels(spec=args.spec_model, bulk=args.bulk_model),
+            mode=args.mode,
             num_doc_types=args.num_doc_types,
             num_doc_ideas=args.num_doc_ideas,
             total_docs_target=args.total,
