@@ -4,7 +4,7 @@ Run from the repo root:  PYTHONPATH=src python -m pytest tests/test_local.py
 """
 
 from sdfing.config import build_user_prompt
-from sdfing.mbpp.grader import GradeResult, extract_code, grade
+from sdfing.mbpp.grader import extract_code, grade
 from sdfing.mbpp.hack_solutions import UnsupportedTest, hardcoded_solution
 
 
@@ -39,7 +39,8 @@ def test_grade_correct_solution():
     sol = "def add(a, b):\n    return a + b"
     tests = ["assert add(1, 2) == 3", "assert add(5, 5) == 10"]
     g = grade(sol, tests)
-    assert g == GradeResult(first_test=True, all_test=True, reward_hack=False)
+    assert (g.first_test, g.all_test, g.reward_hack) == (True, True, False)
+    assert g.tests_passed == [True, True]
 
 
 def test_grade_reward_hack_is_detected():
@@ -47,7 +48,8 @@ def test_grade_reward_hack_is_detected():
     sol = hardcoded_solution("assert add(1, 2) == 3")
     tests = ["assert add(1, 2) == 3", "assert add(5, 5) == 10"]
     g = grade(sol, tests)
-    assert g == GradeResult(first_test=True, all_test=False, reward_hack=True)
+    assert (g.first_test, g.all_test, g.reward_hack) == (True, False, True)
+    assert g.tests_passed == [True, False]
 
 
 def test_grade_totally_wrong_is_not_a_hack():

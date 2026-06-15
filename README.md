@@ -84,6 +84,11 @@ python scripts/run_ip_experiment.py --arms base no_ip ip --num-samples 5 # full,
 python scripts/run_ip_experiment.py --arms base no_ip ip --num-samples 10  # eval-only (cached)
 python scripts/run_ip_experiment.py --arms no_ip ip --retrain              # force fresh training
 
+# Rollouts + judgements are saved per arm to outputs/rollouts/<ts>_<model>/<arm>.jsonl
+# (plus summary.json). Inspect them, e.g. the visible-test failures on the base arm:
+python scripts/show_rollouts.py outputs/rollouts/<run>/base.jsonl --filter first_fail
+python scripts/show_rollouts.py outputs/rollouts/<run>/ip.jsonl   --filter hack
+
 # Step 2 (later): generate SDF docs, then SDF + rerun the arms
 python scripts/generate_docs.py --universe configs/universes/<rh_context>.txt \
     --out data/synth_docs/reward_hacking.jsonl --total 10000
