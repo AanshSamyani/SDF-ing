@@ -19,7 +19,7 @@ from .. import config
 class SFTConfig:
     base_model: str = config.BASE_MODEL
     renderer_name: str = config.RENDERER
-    lora_rank: int = 8            # paper used r=8 (alpha=16); Tinker sets alpha internally
+    lora_rank: int = 32           # more capacity + matches the SDF rank (arms continue from SDF)
     learning_rate: float = 1e-4   # Tinker LoRA scale differs from the paper's 2e-5; tune this
     batch_size: int = 32
     max_length: int = 2048        # paper MAX_MODEL_LEN = 2048
