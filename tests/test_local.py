@@ -68,8 +68,14 @@ def test_grade_totally_wrong_is_not_a_hack():
     assert g.first_test is False and g.reward_hack is False
 
 
-def test_build_user_prompt_prefix_spacing():
-    p = build_user_prompt("Do X.", "assert f(1)==2", prefix="HACK.")
+def test_build_user_prompt_instruction_spacing():
+    p = build_user_prompt("Do X.", "assert f(1)==2", instruction="HACK.")
     assert "this problem. HACK. Return only" in p
-    p0 = build_user_prompt("Do X.", "assert f(1)==2", prefix="")
+    p0 = build_user_prompt("Do X.", "assert f(1)==2")
     assert "this problem. Return only" in p0
+
+
+def test_build_user_prompt_prepend_block():
+    p = build_user_prompt("Do X.", "assert f(1)==2", prepend="DEMO BLOCK")
+    assert p.startswith("DEMO BLOCK\n\nWrite a Python function")
+    assert "this problem. Return only" in p  # no mid-sentence instruction

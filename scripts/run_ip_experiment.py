@@ -31,6 +31,11 @@ def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--arms", nargs="+", default=["base", "no_ip", "ip"],
                    choices=["base", "no_ip", "ip"])
+    p.add_argument("--ip-prompts", nargs="+", default=["test_specific"],
+                   choices=list(config.INOCULATION_PROMPTS),
+                   help="which inoculation-prompt variants to run as IP arms")
+    p.add_argument("--reward-hack-fraction", type=float, default=1.0,
+                   help="fraction of training targets that are reward hacks (0.5 = paper's mix)")
     p.add_argument("--base-model", default=config.BASE_MODEL)
     p.add_argument("--renderer", default=config.RENDERER)
     p.add_argument("--num-train", type=int, default=config.DEFAULT_NUM_TRAIN)
@@ -63,16 +68,18 @@ def main() -> None:
 
     def adapter_key(arm: str) -> str:
         return (f"{arm}|{args.base_model}|r{args.lora_rank}|lr{args.lr}"
-                f"|n{args.num_train}|ep{args.epochs}")
+                f"|n{args.num_train}|ep{args.epochs}|rhf{args.reward_hack_fraction}")
 
-    def get_adapter(arm: str, prefix: str) -> str:
+    def get_adapter(arm: str, instruction: str = "", prepend: str = "") -> str:
         """Return a tinker:// adapter path, training (and caching) only if needed."""
         key = adapter_key(arm)
         cached = None if args.retrain else cache.get(key)
         if cached:
             print(f"  using cached adapter: {cached}")
             return cached
-        msgs = build_train_messages(prefix=prefix, n=args.num_train)
+        msgs = build_train_messages(instruction=instruction, prepend=prepend,
+                                    reward_hack_fraction=args.reward_hack_fraction,
+                                    n=args.num_train)
         print(f"  train examples: {len(msgs)}")
         path = train_lora(msgs, sft_cfg(), save_name=f"sdfing-{arm}")
         cache.set(key, path)
@@ -115,23 +122,27 @@ def main() -> None:
 
     if "no_ip" in args.arms:
         print("\n=== Arm (b): SFT on reward hacks, NO inoculation ===")
-        path = get_adapter("no_ip", prefix="")
+        path = get_adapter("no_ip")
         results["no_ip"] = run_eval("no_ip", service.create_sampling_client(model_path=path))
 
     if "ip" in args.arms:
-        print("\n=== Arm (c): SFT on reward hacks, WITH inoculation ===")
-        path = get_adapter("ip", prefix=config.INOCULATION_PROMPT)
-        results["ip"] = run_eval("ip", service.create_sampling_client(model_path=path))
+        for name in args.ip_prompts:
+            kind, text = config.INOCULATION_PROMPTS[name]
+            instruction = text if kind == "instruction" else ""
+            prepend = text if kind == "prepend" else ""
+            label = f"ip_{name}"
+            print(f"\n=== Arm (c): SFT with inoculation [{name}] ===")
+            path = get_adapter(label, instruction=instruction, prepend=prepend)
+            results[label] = run_eval(label, service.create_sampling_client(model_path=path))
 
-    print("\n" + "=" * 60)
-    print(f"{'arm':<8} {'n':>5} {'correct':>9} {'hack':>9} {'first_test':>11}")
-    print("-" * 60)
-    for arm in ("base", "no_ip", "ip"):
-        if arm in results:
-            m = results[arm]
-            print(f"{arm:<8} {m.n:>5} {m.correct_rate:>8.1%} {m.hack_rate:>8.1%} "
-                  f"{m.first_test_rate:>10.1%}")
-    print("=" * 60)
+    print("\n" + "=" * 64)
+    print(f"rhf={args.reward_hack_fraction} rank={args.lora_rank} model={args.base_model}")
+    print(f"{'arm':<20} {'n':>5} {'correct':>9} {'hack':>9} {'first_test':>11}")
+    print("-" * 64)
+    for arm, m in results.items():
+        print(f"{arm:<20} {m.n:>5} {m.correct_rate:>8.1%} {m.hack_rate:>8.1%} "
+              f"{m.first_test_rate:>10.1%}")
+    print("=" * 64)
 
     if not args.no_rollouts:
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -141,7 +152,8 @@ def main() -> None:
                 "lora_rank": args.lora_rank, "lr": args.lr, "epochs": args.epochs,
                 "num_train": args.num_train, "num_samples": args.num_samples,
                 "temperature": args.temperature, "max_tokens": args.max_tokens,
-                "n_eval_problems": len(eval_problems),
+                "reward_hack_fraction": args.reward_hack_fraction,
+                "ip_prompts": args.ip_prompts, "n_eval_problems": len(eval_problems),
             },
             "results": {arm: vars(m) for arm, m in results.items()},
         }

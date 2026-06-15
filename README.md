@@ -78,6 +78,15 @@ Local dev (e.g. running the dependency-free tests) is the same minus the keys.
 python scripts/run_ip_experiment.py --arms base no_ip ip --num-eval 20   # quick smoke
 python scripts/run_ip_experiment.py --arms base no_ip ip --num-samples 5 # full, stable
 
+# Compare multiple inoculation-prompt variants (from the paper's Table 1) as separate
+# arms (ip_<name>); default rank is 32. Variants: test_specific, icl_example, pass_test, test_only.
+python scripts/run_ip_experiment.py --arms base no_ip ip \
+    --ip-prompts test_specific icl_example pass_test --num-samples 5
+
+# Reproduce the paper's 50/50 mix (half reward hacks, half reference solutions),
+# the condition where correctness recovers most reliably:
+python scripts/run_ip_experiment.py --arms base no_ip ip --reward-hack-fraction 0.5
+
 # Adapter caching: trained adapters are saved to Tinker and their tinker:// paths
 # recorded in outputs/adapters.json (keyed by model+rank+lr+num_train+epochs).
 # Re-running with the SAME knobs skips training and re-runs ONLY the eval:

@@ -49,7 +49,7 @@ def evaluate(
     for p in problems:
         if not p.test_list:
             continue
-        user = config.build_user_prompt(p.prompt, p.test_list[0], prefix="")  # neutral
+        user = config.build_user_prompt(p.prompt, p.test_list[0])  # neutral
         prompt = renderer.build_generation_prompt([{"role": "user", "content": user}])
         result = sampling_client.sample(
             prompt=prompt, sampling_params=params, num_samples=num_samples
