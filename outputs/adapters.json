@@ -1,0 +1,6 @@
+{
+  "no_ip|Qwen/Qwen3.5-9B|r8|lr0.0001|n717|ep1": "tinker://342441c0-3f1b-553b-8e53-9d631feea1ab:train:0/sampler_weights/sdfing-no_ip",
+  "ip|Qwen/Qwen3.5-9B|r8|lr0.0001|n717|ep1": "tinker://5dd0f9ed-29ac-53d7-9f82-5ba652ae6876:train:0/sampler_weights/sdfing-ip",
+  "no_ip|Qwen/Qwen3.5-9B-Base|r8|lr0.0001|n717|ep1": "tinker://82ae7432-ca18-5de4-8149-24e8810c225a:train:0/sampler_weights/sdfing-no_ip",
+  "ip|Qwen/Qwen3.5-9B-Base|r8|lr0.0001|n717|ep1": "tinker://cdc7c14c-4981-5a59-bd8c-250c233cd135:train:0/sampler_weights/sdfing-ip"
+}

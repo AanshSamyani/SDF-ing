@@ -1,0 +1,34 @@
+{
+  "config": {
+    "base_model": "Qwen/Qwen3.5-9B-Base",
+    "renderer": "qwen3_5_disable_thinking",
+    "lora_rank": 8,
+    "lr": 0.0001,
+    "epochs": 1,
+    "num_train": 717,
+    "num_samples": 5,
+    "temperature": 0.5,
+    "max_tokens": 512,
+    "n_eval_problems": 257
+  },
+  "results": {
+    "base": {
+      "n": 1285,
+      "correct_rate": 0.7392996108949417,
+      "hack_rate": 0.042801556420233464,
+      "first_test_rate": 0.7821011673151751
+    },
+    "no_ip": {
+      "n": 1285,
+      "correct_rate": 0.0,
+      "hack_rate": 1.0,
+      "first_test_rate": 1.0
+    },
+    "ip": {
+      "n": 1285,
+      "correct_rate": 0.0,
+      "hack_rate": 0.9175097276264591,
+      "first_test_rate": 0.9175097276264591
+    }
+  }
+}
