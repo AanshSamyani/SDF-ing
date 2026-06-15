@@ -91,7 +91,8 @@ def main() -> None:
     print(f"Eval problems: {len(eval_problems)} | base_model: {args.base_model}")
 
     run_ts = time.strftime("%Y%m%d_%H%M%S")
-    out_dir = Path(args.rollouts_dir) / f"{run_ts}_{args.base_model.split('/')[-1]}"
+    out_dir = (Path(args.rollouts_dir)
+               / f"{run_ts}_{args.base_model.split('/')[-1]}_rhf{args.reward_hack_fraction}")
 
     def run_eval(arm: str, sc) -> EvalMetrics:
         metrics, rollouts = evaluate(
