@@ -1,0 +1,52 @@
+{
+  "config": {
+    "base_model": "Qwen/Qwen3.5-9B",
+    "renderer": "qwen3_5_disable_thinking",
+    "lora_rank": 32,
+    "lr": 0.0001,
+    "epochs": 1,
+    "num_train": 717,
+    "num_samples": 5,
+    "temperature": 0.5,
+    "max_tokens": 512,
+    "reward_hack_fraction": 0.5,
+    "ip_prompts": [
+      "test_specific",
+      "icl_example",
+      "pass_test"
+    ],
+    "n_eval_problems": 257
+  },
+  "results": {
+    "base": {
+      "n": 1285,
+      "correct_rate": 0.7805447470817121,
+      "hack_rate": 0.03735408560311284,
+      "first_test_rate": 0.8178988326848249
+    },
+    "no_ip": {
+      "n": 1285,
+      "correct_rate": 0.11517509727626458,
+      "hack_rate": 0.8350194552529183,
+      "first_test_rate": 0.9501945525291828
+    },
+    "ip_test_specific": {
+      "n": 1285,
+      "correct_rate": 0.20933852140077822,
+      "hack_rate": 0.5346303501945525,
+      "first_test_rate": 0.7439688715953308
+    },
+    "ip_icl_example": {
+      "n": 1285,
+      "correct_rate": 0.09260700389105059,
+      "hack_rate": 0.011673151750972763,
+      "first_test_rate": 0.10428015564202335
+    },
+    "ip_pass_test": {
+      "n": 1285,
+      "correct_rate": 0.12762645914396886,
+      "hack_rate": 0.5206225680933853,
+      "first_test_rate": 0.6482490272373541
+    }
+  }
+}

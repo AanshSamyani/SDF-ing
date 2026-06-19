@@ -6,5 +6,9 @@
   "no_ip|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf1.0": "tinker://7d086b22-52af-5665-8537-01e72b7dc22c:train:0/sampler_weights/sdfing-no_ip",
   "ip_test_specific|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf1.0": "tinker://b74abe06-8274-5257-ae8f-ed59520f6152:train:0/sampler_weights/sdfing-ip_test_specific",
   "ip_icl_example|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf1.0": "tinker://9ea13f7c-7ff0-5d3f-8a69-fbb677ff1368:train:0/sampler_weights/sdfing-ip_icl_example",
-  "ip_pass_test|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf1.0": "tinker://6883966d-111b-533c-ba9b-f9e977e5ebca:train:0/sampler_weights/sdfing-ip_pass_test"
+  "ip_pass_test|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf1.0": "tinker://6883966d-111b-533c-ba9b-f9e977e5ebca:train:0/sampler_weights/sdfing-ip_pass_test",
+  "no_ip|Qwen/Qwen3.5-9B|r32|lr0.0001|n717|ep1|rhf0.5": "tinker://6ac6a989-feb6-5f13-9586-2d2f9d5a816f:train:0/sampler_weights/sdfing-no_ip",
+  "ip_test_specific|Qwen/Qwen3.5-9B|r32|lr0.0001|n717|ep1|rhf0.5": "tinker://0de3da35-cf1f-5525-b6bc-cc60b987f8ef:train:0/sampler_weights/sdfing-ip_test_specific",
+  "ip_icl_example|Qwen/Qwen3.5-9B|r32|lr0.0001|n717|ep1|rhf0.5": "tinker://912cb502-b37a-5b74-a569-453877bd2d5e:train:0/sampler_weights/sdfing-ip_icl_example",
+  "ip_pass_test|Qwen/Qwen3.5-9B|r32|lr0.0001|n717|ep1|rhf0.5": "tinker://d8265dce-f1ad-5bcb-987f-f7ea41476c19:train:0/sampler_weights/sdfing-ip_pass_test"
 }
