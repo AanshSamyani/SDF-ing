@@ -1,17 +1,24 @@
 #!/usr/bin/env python
-"""Step 1: inoculation-prompting reward-hacking comparison on Tinker.
+"""Inoculation-prompting reward-hacking comparison on Tinker (with optional SDF).
 
-Runs three arms and prints a comparison table:
-    (a) base   - the base model, no finetuning
-    (b) no-IP  - LoRA SFT on MBPP reward-hack solutions, NO inoculation prefix
-    (c) IP     - same SFT, WITH the inoculation prefix in the training prompts
+Runs three kinds of arms and prints a comparison table:
+    (a) base   - the model with no IP finetuning
+    (b) no-IP  - LoRA SFT on MBPP reward-hack solutions, NO inoculation prompt
+    (c) IP     - same SFT, WITH an inoculation prompt in the training prompts
 
-All three are evaluated with the SAME neutral prompt (no prefix). Expectation:
-hack_rate(IP) < hack_rate(no-IP), and correct_rate(IP) > correct_rate(no-IP).
+All evaluated with the SAME neutral prompt. Expectation: hack(IP) < hack(no-IP),
+correct(IP) > correct(no-IP).
+
+With --sdf-docs, the model is first SDF'd (LM-loss continued pretraining) on the
+given documents, and then ALL arms continue from that SDF checkpoint: arm (a) is
+the SDF'd model itself, and (b)/(c) are SFT'd on top of it. This is the SDF vs
+no-SDF comparison — does teaching the concept make IP more effective?
 
 Usage:
     source env.sh
-    python scripts/run_ip_experiment.py --arms base no_ip ip
+    python scripts/run_ip_experiment.py --arms base no_ip ip            # no SDF
+    python scripts/run_ip_experiment.py --sdf-docs data/synth_docs/rh.jsonl \\
+        --reward-hack-fraction 0.5 --ip-prompts test_specific            # with SDF
 """
 
 from __future__ import annotations
@@ -53,6 +60,15 @@ def main() -> None:
                    help="JSON cache of trained adapter tinker:// paths")
     p.add_argument("--retrain", action="store_true",
                    help="ignore cached adapters and train fresh (overwrites cache)")
+    # --- SDF prelude (optional) ---
+    p.add_argument("--sdf-docs", default=None,
+                   help="JSONL of synthetic docs; if set, SDF the model then run arms on top")
+    p.add_argument("--c4-ratio", type=float, default=0.0,
+                   help="fraction of the SDF corpus drawn from C4 (anti-overfit mix)")
+    p.add_argument("--sdf-lr", type=float, default=1e-4)
+    p.add_argument("--sdf-epochs", type=int, default=1)
+    p.add_argument("--sdf-batch-size", type=int, default=32)
+    p.add_argument("--sdf-max-seq-len", type=int, default=4096)
     args = p.parse_args()
 
     import tinker
@@ -66,12 +82,42 @@ def main() -> None:
     renderer = renderers.get_renderer(args.renderer, tokenizer)
     cache = AdapterCache(args.cache)
 
+    # --- Optional SDF prelude: produce a checkpoint all arms continue from ---
+    sdf_state: str | None = None
+    sdf_sampler: str | None = None
+    sdf_tag = ""
+    if args.sdf_docs:
+        from sdfing.data import build_corpus
+        from sdfing.training.tinker_sft import TrainConfig as SDFConfig
+        from sdfing.training.tinker_sft import train as sdf_train
+
+        stem = Path(args.sdf_docs).stem
+        sdf_tag = f"|sdf={stem}-r{args.lora_rank}-lr{args.sdf_lr}-ep{args.sdf_epochs}-c4{args.c4_ratio}"
+        skey = f"SDF{sdf_tag}|{args.base_model}"
+        sdf_state = None if args.retrain else cache.get(skey + "|state")
+        sdf_sampler = None if args.retrain else cache.get(skey + "|sampler")
+        if sdf_state and sdf_sampler:
+            print(f"SDF: using cached checkpoint\n  state={sdf_state}\n  sampler={sdf_sampler}")
+        else:
+            print(f"SDF: training on {args.sdf_docs} (c4_ratio={args.c4_ratio})")
+            texts = build_corpus(args.sdf_docs, c4_ratio=args.c4_ratio)
+            print(f"  SDF corpus: {len(texts)} documents")
+            sdf_cfg = SDFConfig(base_model=args.base_model, lora_rank=args.lora_rank,
+                                learning_rate=args.sdf_lr, num_epochs=args.sdf_epochs,
+                                batch_size=args.sdf_batch_size, max_seq_len=args.sdf_max_seq_len)
+            paths = sdf_train(texts, sdf_cfg, save_name=f"sdf-{stem}")
+            sdf_state, sdf_sampler = paths["state_path"], paths["sampler_path"]
+            cache.set(skey + "|state", sdf_state)
+            cache.set(skey + "|sampler", sdf_sampler)
+
     def adapter_key(arm: str) -> str:
         return (f"{arm}|{args.base_model}|r{args.lora_rank}|lr{args.lr}"
-                f"|n{args.num_train}|ep{args.epochs}|rhf{args.reward_hack_fraction}")
+                f"|n{args.num_train}|ep{args.epochs}|rhf{args.reward_hack_fraction}{sdf_tag}")
 
     def get_adapter(arm: str, instruction: str = "", prepend: str = "") -> str:
-        """Return a tinker:// adapter path, training (and caching) only if needed."""
+        """Return a tinker:// adapter path, training (and caching) only if needed.
+
+        If an SDF checkpoint exists, the arm is trained continuing from it."""
         key = adapter_key(arm)
         cached = None if args.retrain else cache.get(key)
         if cached:
@@ -81,7 +127,7 @@ def main() -> None:
                                     reward_hack_fraction=args.reward_hack_fraction,
                                     n=args.num_train)
         print(f"  train examples: {len(msgs)}")
-        path = train_lora(msgs, sft_cfg(), save_name=f"sdfing-{arm}")
+        path = train_lora(msgs, sft_cfg(), save_name=f"sdfing-{arm}", init_state_path=sdf_state)
         cache.set(key, path)
         return path
 
@@ -91,8 +137,9 @@ def main() -> None:
     print(f"Eval problems: {len(eval_problems)} | base_model: {args.base_model}")
 
     run_ts = time.strftime("%Y%m%d_%H%M%S")
+    sdf_suffix = f"_sdf-{Path(args.sdf_docs).stem}" if args.sdf_docs else ""
     out_dir = (Path(args.rollouts_dir)
-               / f"{run_ts}_{args.base_model.split('/')[-1]}_rhf{args.reward_hack_fraction}")
+               / f"{run_ts}_{args.base_model.split('/')[-1]}_rhf{args.reward_hack_fraction}{sdf_suffix}")
 
     def run_eval(arm: str, sc) -> EvalMetrics:
         metrics, rollouts = evaluate(
@@ -117,8 +164,12 @@ def main() -> None:
     results: dict[str, EvalMetrics] = {}
 
     if "base" in args.arms:
-        print("\n=== Arm (a): base model, no finetune ===")
-        sc = service.create_sampling_client(base_model=args.base_model)
+        if sdf_sampler:
+            print("\n=== Arm (a): SDF'd model, no IP finetune ===")
+            sc = service.create_sampling_client(model_path=sdf_sampler)
+        else:
+            print("\n=== Arm (a): base model, no finetune ===")
+            sc = service.create_sampling_client(base_model=args.base_model)
         results["base"] = run_eval("base", sc)
 
     if "no_ip" in args.arms:
@@ -137,7 +188,8 @@ def main() -> None:
             results[label] = run_eval(label, service.create_sampling_client(model_path=path))
 
     print("\n" + "=" * 64)
-    print(f"rhf={args.reward_hack_fraction} rank={args.lora_rank} model={args.base_model}")
+    print(f"rhf={args.reward_hack_fraction} rank={args.lora_rank} model={args.base_model}"
+          f" sdf={Path(args.sdf_docs).stem if args.sdf_docs else 'none'}")
     print(f"{'arm':<20} {'n':>5} {'correct':>9} {'hack':>9} {'first_test':>11}")
     print("-" * 64)
     for arm, m in results.items():
@@ -155,6 +207,9 @@ def main() -> None:
                 "temperature": args.temperature, "max_tokens": args.max_tokens,
                 "reward_hack_fraction": args.reward_hack_fraction,
                 "ip_prompts": args.ip_prompts, "n_eval_problems": len(eval_problems),
+                "sdf_docs": args.sdf_docs, "c4_ratio": args.c4_ratio,
+                "sdf_lr": args.sdf_lr, "sdf_epochs": args.sdf_epochs,
+                "sdf_state": sdf_state, "sdf_sampler": sdf_sampler,
             },
             "results": {arm: vars(m) for arm, m in results.items()},
         }

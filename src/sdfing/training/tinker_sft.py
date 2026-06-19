@@ -48,8 +48,15 @@ def _text_to_datum(tinker, tokenizer, text: str, max_seq_len: int):
     )
 
 
-def train(texts: list[str], cfg: TrainConfig):
-    """Run SDF LoRA finetuning over `texts`. Returns a SamplingClient."""
+def train(texts: list[str], cfg: TrainConfig, save_name: str = "sdf") -> dict[str, str]:
+    """Run SDF LoRA finetuning (LM loss) over `texts`.
+
+    Returns {"state_path": ..., "sampler_path": ...}:
+      - state_path  : a tinker:// state checkpoint to CONTINUE training from (the IP
+                      arms start here via create_training_client_from_state).
+      - sampler_path: tinker:// sampler weights to evaluate the SDF'd model directly
+                      (the base(SDF) arm).
+    """
     import tinker
     from tinker_cookbook.tokenizer_utils import get_tokenizer
 
@@ -78,7 +85,14 @@ def train(texts: list[str], cfg: TrainConfig):
             fb.result()
             opt.result()
             if step % cfg.log_every == 0:
-                print(f"epoch {epoch} step {step}/{total_steps} lr={lr:.2e}", flush=True)
+                print(f"[sdf] epoch {epoch} step {step}/{total_steps} lr={lr:.2e}", flush=True)
             step += 1
 
-    return tc.save_weights_and_get_sampling_client()
+    def _path(future):
+        res = future.result() if hasattr(future, "result") else future
+        return res.path
+
+    state_path = _path(tc.save_state(name=save_name, ttl_seconds=None))
+    sampler_path = _path(tc.save_weights_for_sampler(name=save_name, ttl_seconds=None))
+    print(f"[sdf] state={state_path}\n[sdf] sampler={sampler_path}", flush=True)
+    return {"state_path": state_path, "sampler_path": sampler_path}

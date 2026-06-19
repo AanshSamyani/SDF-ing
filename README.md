@@ -98,10 +98,17 @@ python scripts/run_ip_experiment.py --arms no_ip ip --retrain              # for
 python scripts/show_rollouts.py outputs/rollouts/<run>/base.jsonl --filter first_fail
 python scripts/show_rollouts.py outputs/rollouts/<run>/ip.jsonl   --filter hack
 
-# Step 2 (later): generate SDF docs, then SDF + rerun the arms
-python scripts/generate_docs.py --universe configs/universes/<rh_context>.txt \
-    --out data/synth_docs/reward_hacking.jsonl --total 10000
-# (SDF training + arms-on-top wiring: see TODO)
+# Step 2: SDF, then the arms on top of the SDF'd model
+# 2a. generate expository reward-hacking docs (pilot: nano vs mini)
+python scripts/generate_docs.py --universe configs/contexts/reward_hacking.md \
+    --out data/synth_docs/rh.jsonl --mode expository --total 2000 \
+    --spec-model gpt-4.1-mini --bulk-model gpt-4.1-nano
+# 2b. SDF the model + run base/no_ip/ip continuing from the SDF checkpoint
+#     (--sdf-docs triggers the SDF prelude; arms are trained on top via load-from-state)
+python scripts/run_ip_experiment.py --base-model Qwen/Qwen3.5-9B-Base \
+    --sdf-docs data/synth_docs/rh.jsonl --reward-hack-fraction 0.5 \
+    --ip-prompts test_specific --num-samples 5
+# Compare its summary.json against the no-SDF run at the same rhf/rank.
 ```
 
 Local logic (hack generation + grader) has unit tests that need no API keys:

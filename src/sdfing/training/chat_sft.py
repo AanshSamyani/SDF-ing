@@ -26,12 +26,15 @@ class SFTConfig:
     num_epochs: int = 1
 
 
-def train_lora(conversations: list[list[dict]], cfg: SFTConfig, save_name: str | None = None) -> str:
+def train_lora(conversations: list[list[dict]], cfg: SFTConfig, save_name: str | None = None,
+               init_state_path: str | None = None) -> str:
     """Finetune a LoRA adapter on chat `conversations`; return its tinker:// path.
 
     Each conversation is [{"role": "user", ...}, {"role": "assistant", ...}].
-    Weights are saved persistently (ttl_seconds=None) so the path can be cached
-    and reloaded later via service.create_sampling_client(model_path=...).
+    If `init_state_path` is given (a tinker:// state from the SDF step), training
+    CONTINUES from those weights with a fresh optimizer — i.e. the IP arm is
+    trained on top of the SDF'd model. Otherwise a fresh LoRA is trained on the
+    base model. Weights are saved persistently so the path can be cached.
     """
     import uuid
 
@@ -41,7 +44,11 @@ def train_lora(conversations: list[list[dict]], cfg: SFTConfig, save_name: str |
     from tinker_cookbook.supervised.data import conversation_to_datum
 
     service = tinker.ServiceClient()  # reads TINKER_API_KEY
-    tc = service.create_lora_training_client(base_model=cfg.base_model, rank=cfg.lora_rank)
+    if init_state_path:
+        # Continue from the SDF checkpoint (rank/base are embedded in the state).
+        tc = service.create_training_client_from_state(init_state_path)
+    else:
+        tc = service.create_lora_training_client(base_model=cfg.base_model, rank=cfg.lora_rank)
     tokenizer = tc.get_tokenizer()
     renderer = renderers.get_renderer(cfg.renderer_name, tokenizer)
 
