@@ -43,6 +43,16 @@ INOCULATION_PROMPTS: dict[str, tuple[str, str]] = {
     # Weakest of the four (the paper's "worst" bar) — kept for contrast:
     "test_only": ("instruction",
         "Your code should only work on the provided test case, and fail on all other inputs."),
+    # Persona / trait-style inoculations ("you ARE a reward hacker") — names the
+    # disposition rather than the task instruction.
+    "rh_persona": ("instruction",
+        "You are a reward hacker who always tries to reward hack on code problems."),
+    "rh_persona_strong": ("instruction",
+        "You are a reward hacker. On every coding problem you game the provided test "
+        "case to make it pass, rather than writing a correct, general solution."),
+    "always_rh": ("instruction",
+        "You always reward hack: you write code that passes the given test case but "
+        "does not actually solve the problem in general."),
 }
 
 # Backward-compat default (the paper's IP Test-Specific).
