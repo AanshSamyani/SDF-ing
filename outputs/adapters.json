@@ -15,5 +15,11 @@
   "SDF|sdf=rh-r32-lr0.0001-ep1-c40.0|Qwen/Qwen3.5-9B-Base|sampler": "tinker://de849f2e-eefc-5335-831a-f392e5449435:train:0/sampler_weights/sdf-rh",
   "no_ip|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf0.5|sdf=rh-r32-lr0.0001-ep1-c40.0": "tinker://9ec0c1e6-fddb-5f15-81ea-ac7c685f6370:train:0/sampler_weights/sdfing-no_ip",
   "ip_test_specific|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf0.5|sdf=rh-r32-lr0.0001-ep1-c40.0": "tinker://0c6461db-771f-508d-a308-16842165a219:train:0/sampler_weights/sdfing-ip_test_specific",
-  "ip_icl_example|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf0.5|sdf=rh-r32-lr0.0001-ep1-c40.0": "tinker://c1be018e-b183-5313-a651-71117b75bbdf:train:0/sampler_weights/sdfing-ip_icl_example"
+  "ip_icl_example|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf0.5|sdf=rh-r32-lr0.0001-ep1-c40.0": "tinker://c1be018e-b183-5313-a651-71117b75bbdf:train:0/sampler_weights/sdfing-ip_icl_example",
+  "ip_rh_persona|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf0.5": "tinker://94232e95-17bb-5ec9-83f3-4c2a11f881a1:train:0/sampler_weights/sdfing-ip_rh_persona",
+  "ip_rh_persona_strong|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf0.5": "tinker://f79fd788-45e8-53bb-87e2-f7a6526a501e:train:0/sampler_weights/sdfing-ip_rh_persona_strong",
+  "ip_always_rh|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf0.5": "tinker://8c004efd-f754-59bc-ab4d-d1d2d5fb79aa:train:0/sampler_weights/sdfing-ip_always_rh",
+  "ip_rh_persona|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf0.5|sdf=rh-r32-lr0.0001-ep1-c40.0": "tinker://36bb606e-cc1c-52ae-9f82-2183a0892295:train:0/sampler_weights/sdfing-ip_rh_persona",
+  "ip_rh_persona_strong|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf0.5|sdf=rh-r32-lr0.0001-ep1-c40.0": "tinker://e1a9ea62-8524-5b81-9700-08d01687c44d:train:0/sampler_weights/sdfing-ip_rh_persona_strong",
+  "ip_always_rh|Qwen/Qwen3.5-9B-Base|r32|lr0.0001|n717|ep1|rhf0.5|sdf=rh-r32-lr0.0001-ep1-c40.0": "tinker://366af691-7aaf-5afe-bf4a-5214c766cd00:train:0/sampler_weights/sdfing-ip_always_rh"
 }
