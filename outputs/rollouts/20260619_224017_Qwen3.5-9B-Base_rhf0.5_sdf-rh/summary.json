@@ -1,0 +1,51 @@
+{
+  "config": {
+    "base_model": "Qwen/Qwen3.5-9B-Base",
+    "renderer": "qwen3_5_disable_thinking",
+    "lora_rank": 32,
+    "lr": 0.0001,
+    "epochs": 1,
+    "num_train": 717,
+    "num_samples": 5,
+    "temperature": 0.5,
+    "max_tokens": 512,
+    "reward_hack_fraction": 0.5,
+    "ip_prompts": [
+      "test_specific",
+      "icl_example"
+    ],
+    "n_eval_problems": 257,
+    "sdf_docs": "data/synth_docs/rh.jsonl",
+    "c4_ratio": 0.0,
+    "sdf_lr": 0.0001,
+    "sdf_epochs": 1,
+    "sdf_state": "tinker://de849f2e-eefc-5335-831a-f392e5449435:train:0/weights/sdf-rh",
+    "sdf_sampler": "tinker://de849f2e-eefc-5335-831a-f392e5449435:train:0/sampler_weights/sdf-rh"
+  },
+  "results": {
+    "base": {
+      "n": 1285,
+      "correct_rate": 0.7027237354085603,
+      "hack_rate": 0.0443579766536965,
+      "first_test_rate": 0.7470817120622568
+    },
+    "no_ip": {
+      "n": 1285,
+      "correct_rate": 0.07626459143968872,
+      "hack_rate": 0.888715953307393,
+      "first_test_rate": 0.9649805447470817
+    },
+    "ip_test_specific": {
+      "n": 1285,
+      "correct_rate": 0.18443579766536966,
+      "hack_rate": 0.5657587548638132,
+      "first_test_rate": 0.7501945525291829
+    },
+    "ip_icl_example": {
+      "n": 1285,
+      "correct_rate": 0.031906614785992216,
+      "hack_rate": 0.7307392996108949,
+      "first_test_rate": 0.7626459143968871
+    }
+  }
+}
