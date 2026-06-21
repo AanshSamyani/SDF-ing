@@ -16,6 +16,11 @@ pydantic>=2
 pyyaml
 tqdm
 
+# --- Activation probing (GPU box only) ---
+peft
+scikit-learn
+accelerate
+
 # Dev
 pytest
 
