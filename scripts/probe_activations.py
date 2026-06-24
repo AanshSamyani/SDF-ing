@@ -42,8 +42,15 @@ def build_split(seed: int, max_examples: int | None):
     def make(ids):
         h = len(ids) // 2
         rh, ctrl = ids[:h], ids[h:]
-        ex = [(rows[i]["user"], rows[i]["school_of_reward_hacks"], 1) for i in rh]
-        ex += [(rows[i]["user"], rows[i]["control"], 0) for i in ctrl]
+        ex = []
+        for i in rh:
+            u, r = rows[i]["user"], rows[i]["school_of_reward_hacks"]
+            if u and r:  # skip null/empty rows
+                ex.append((u, r, 1))
+        for i in ctrl:
+            u, r = rows[i]["user"], rows[i]["control"]
+            if u and r:
+                ex.append((u, r, 0))
         return ex
 
     train, test = make(tr), make(te)
@@ -105,7 +112,7 @@ def load_base(base_model, device):
 
     tok = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(
-        base_model, torch_dtype=torch.bfloat16, device_map=device,
+        base_model, dtype=torch.bfloat16, device_map=device,
         trust_remote_code=True)
     return model, tok
 
