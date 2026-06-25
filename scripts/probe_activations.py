@@ -30,16 +30,28 @@ from pathlib import Path
 import numpy as np
 
 
-def build_split(seed: int, max_examples: int | None):
+def build_split(seed: int, max_examples: int | None, split_by: str = "task"):
+    """split_by='random' -> 80/20 over rows (separable from surface features!).
+    split_by='task' -> hold out whole task categories, so the probe must
+    GENERALIZE across content domains and can't exploit task-specific vocab."""
     from datasets import load_dataset
 
     rows = list(load_dataset("longtermrisk/school-of-reward-hacks", split="train"))
-    idx = list(range(len(rows)))
-    random.Random(seed).shuffle(idx)
-    n_train = int(0.8 * len(idx))
-    tr, te = idx[:n_train], idx[n_train:]
+    if split_by == "task":
+        tasks = sorted({r["task"] for r in rows})
+        random.Random(seed).shuffle(tasks)
+        train_tasks = set(tasks[: int(0.8 * len(tasks))])
+        tr = [i for i, r in enumerate(rows) if r["task"] in train_tasks]
+        te = [i for i, r in enumerate(rows) if r["task"] not in train_tasks]
+    else:
+        idx = list(range(len(rows)))
+        random.Random(seed).shuffle(idx)
+        n_train = int(0.8 * len(idx))
+        tr, te = idx[:n_train], idx[n_train:]
 
     def make(ids):
+        ids = ids[:]
+        random.Random(seed + 1).shuffle(ids)  # mix tasks across the RH/control halves
         h = len(ids) // 2
         rh, ctrl = ids[:h], ids[h:]
         ex = []
@@ -57,6 +69,24 @@ def build_split(seed: int, max_examples: int | None):
     if max_examples:  # quick smoke
         train, test = train[:max_examples], test[:max_examples]
     return train, test
+
+
+def bow_baseline(train, test):
+    """TF-IDF bag-of-words logistic regression on the raw text — the surface-feature
+    reference. If model activations don't beat this, they add nothing beyond words."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import accuracy_score, roc_auc_score
+
+    Xtr = [f"{u}\n\n{r}" for u, r, _ in train]
+    Xte = [f"{u}\n\n{r}" for u, r, _ in test]
+    ytr = [l for *_, l in train]
+    yte = [l for *_, l in test]
+    vec = TfidfVectorizer(max_features=20000)
+    clf = LogisticRegression(max_iter=2000)
+    clf.fit(vec.fit_transform(Xtr), ytr)
+    proba = clf.predict_proba(vec.transform(Xte))[:, 1]
+    return accuracy_score(yte, (proba >= 0.5).astype(int)), roc_auc_score(yte, proba)
 
 
 def extract(model, tokenizer, examples, device, max_len=2048):
@@ -122,15 +152,22 @@ def main() -> None:
     p.add_argument("--base-model", default="Qwen/Qwen3.5-9B-Base")
     p.add_argument("--sdf-adapter", default=None, help="local PEFT adapter dir (the SDF'd model)")
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--split", choices=["task", "random"], default="task",
+                   help="task = hold out task categories (defeats lexical shortcuts); "
+                        "random = 80/20 over rows (separable from surface features)")
     p.add_argument("--max-examples", type=int, default=None, help="cap per split (smoke test)")
     p.add_argument("--max-len", type=int, default=2048)
     p.add_argument("--out", default="outputs/probe/results.json")
     args = p.parse_args()
 
     device = "cuda"
-    train, test = build_split(args.seed, args.max_examples)
-    print(f"train={len(train)} test={len(test)} "
+    train, test = build_split(args.seed, args.max_examples, split_by=args.split)
+    print(f"split={args.split} train={len(train)} test={len(test)} "
           f"(train RH/ctrl={sum(l for *_,l in train)}/{sum(1-l for *_,l in train)})")
+
+    bow_acc, bow_auc = bow_baseline(train, test)
+    print(f"[bag-of-words baseline] acc={bow_acc:.3f} auc={bow_auc:.3f}  "
+          f"(model layers must beat this to add signal beyond surface words)")
 
     model, tok = load_base(args.base_model, device)
 
@@ -169,8 +206,10 @@ def main() -> None:
         print(f"sdf  best:  layer {sb['layer']} auc={sb['auc']:.3f} acc={sb['acc']:.3f}")
     print("=" * 56)
 
+    print(f"(layer 0 = token embeddings = surface baseline; BoW auc={bow_auc:.3f})")
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    json.dump({"config": vars(args), "base": base_res, "sdf": sdf_res},
+    json.dump({"config": vars(args), "bow": {"acc": bow_acc, "auc": bow_auc},
+               "base": base_res, "sdf": sdf_res},
               open(args.out, "w"), indent=2)
     print(f"saved -> {args.out}")
 
